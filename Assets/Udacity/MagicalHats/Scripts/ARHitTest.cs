@@ -6,8 +6,11 @@ using UnityEngine.XR.iOS;
 public class ARHitTest : MonoBehaviour {
 	public Camera ARCamera; //the Virtual Camera used for AR
 	public GameObject hitPrefab; //prefab we place on a hit test
+	public GameObject rabbitPrefab;
 
 	private List<GameObject> spawnedObjects = new List<GameObject>(); //array used to keep track of spawned objects
+	private List<GameObject> spawnedRabbits = new List<GameObject>();
+	private GameObject rabHat; 
 
 	/// <summary>
 	/// Function that is called on 
@@ -39,7 +42,7 @@ public class ARHitTest : MonoBehaviour {
 			foreach (var hitResult in hitResults) {
 				//TODO: get the position and rotations to spawn the hat
 				Vector3 pos = UnityARMatrixOps.GetPosition (hitResult.worldTransform);
-				Quaternion rotation = UnityARMatrixOps.GetRotation (hitResult.worldTransform);
+				Quaternion rotation = UnityARMatrixOps.GetRotation (hitResult.worldTransform) * Quaternion.AngleAxis(180, Vector3.up);
 				spawnedObjects.Add( Instantiate (hitPrefab, pos, rotation) ); // in order to use for shuffling
 				return true;
 			}
@@ -61,7 +64,16 @@ public class ARHitTest : MonoBehaviour {
 		RaycastHit hit;
 		if (Physics.Raycast (ARCamera.ScreenPointToRay (point), out hit)) {
 			GameObject item = hit.collider.transform.parent.gameObject; //parent is what is stored in our area;
+			if (item == rabHat) {
+				Vector3 pos = rabHat.transform.position;
+				Quaternion rotation = rabHat.transform.rotation;
+				spawnedRabbits.Add( Instantiate (rabbitPrefab, pos, rotation) );
+			}
 			item.transform.position += new Vector3(0f, 0.1f, 0f);
+
+			if (spawnedRabbits.Remove (item) ) { //make sure to remove the hat from the array for consistancy
+				Destroy (item);
+			}
 			//if (spawnedObjects.Remove (item) ) { //make sure to remove the hat from the array for consistancy
 				//Destroy (item);
 			//}
@@ -73,6 +85,9 @@ public class ARHitTest : MonoBehaviour {
 	/// </summary>
 	public void Shuffle(){
 		StartCoroutine( ShuffleTime ( Random.Range(5, 10)) );
+
+		rabHat = spawnedObjects[Random.Range(0, spawnedObjects.Count)];
+
 	}
 		
 	/// <summary>
