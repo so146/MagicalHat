@@ -8,6 +8,7 @@ public class ARHitTest : MonoBehaviour {
 	public GameObject hitPrefab; //prefab we place on a hit test
 	public GameObject rabbitPrefab;
 	public GameObject effect;
+	public GameObject explosion;
 
 	private List<GameObject> spawnedObjects = new List<GameObject>(); //array used to keep track of spawned objects
 	private List<GameObject> spawnedRabbits = new List<GameObject>();
@@ -47,7 +48,7 @@ public class ARHitTest : MonoBehaviour {
 				GameObject smoke = Instantiate (effect, pos, rotation);
 				GameObject hat = Instantiate (hitPrefab, pos, rotation * Quaternion.AngleAxis(180, Vector3.forward));
 				StartCoroutine (RotateAnime (hat, 1f));
-				Destroy (smoke);
+				//Destroy (smoke);
 				spawnedObjects.Add( hat ); // in order to use for shuffling
 				return true;
 			}
@@ -86,6 +87,7 @@ public class ARHitTest : MonoBehaviour {
 				Vector3 pos = item.transform.position;
 				Quaternion rotation = item.transform.rotation * Quaternion.AngleAxis(180, Vector3.up);
 				GameObject newRabbit = Instantiate (rabbitPrefab, pos, rotation);
+				Instantiate (explosion, pos, rotation);
 				//newRabbit.GetComponent<Animation> ().Play ("Take 001");
 				spawnedRabbits.Add( newRabbit );
 			}
