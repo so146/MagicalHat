@@ -7,10 +7,11 @@ public class ARHitTest : MonoBehaviour {
 	public Camera ARCamera; //the Virtual Camera used for AR
 	public GameObject hitPrefab; //prefab we place on a hit test
 	public GameObject rabbitPrefab;
+	public GameObject effect;
 
 	private List<GameObject> spawnedObjects = new List<GameObject>(); //array used to keep track of spawned objects
 	private List<GameObject> spawnedRabbits = new List<GameObject>();
-	private GameObject rabHat; 
+	private List<GameObject> rabHat = new List<GameObject>(); 
 
 	/// <summary>
 	/// Function that is called on 
@@ -42,12 +43,28 @@ public class ARHitTest : MonoBehaviour {
 			foreach (var hitResult in hitResults) {
 				//TODO: get the position and rotations to spawn the hat
 				Vector3 pos = UnityARMatrixOps.GetPosition (hitResult.worldTransform);
-				Quaternion rotation = UnityARMatrixOps.GetRotation (hitResult.worldTransform) * Quaternion.AngleAxis(180, Vector3.up);
-				spawnedObjects.Add( Instantiate (hitPrefab, pos, rotation) ); // in order to use for shuffling
+				Quaternion rotation = UnityARMatrixOps.GetRotation (hitResult.worldTransform);
+				GameObject smoke = Instantiate (effect, pos, rotation);
+				GameObject hat = Instantiate (hitPrefab, pos, rotation * Quaternion.AngleAxis(180, Vector3.forward));
+				StartCoroutine (RotateAnime (hat, 1f));
+				Destroy (smoke);
+				spawnedObjects.Add( hat ); // in order to use for shuffling
 				return true;
 			}
 		}
 		return false;
+	}
+
+	IEnumerator RotateAnime(GameObject obj, float duration){
+		//Lerp the position of item1 and item2 so that they switch places
+		//the transition should take "duration" amount of time
+		//Optional: try making sure the hats do not collide with each other
+		float t = 0;
+		while (t < duration) {
+			t += Time.deltaTime;
+			obj.transform.rotation *= Quaternion.AngleAxis (180 * Time.deltaTime / duration, Vector3.forward);
+			yield return null;
+		}
 	}
 
 	// Fixed Update is called once per frame
@@ -64,12 +81,15 @@ public class ARHitTest : MonoBehaviour {
 		RaycastHit hit;
 		if (Physics.Raycast (ARCamera.ScreenPointToRay (point), out hit)) {
 			GameObject item = hit.collider.transform.parent.gameObject; //parent is what is stored in our area;
-			if (item == rabHat) {
-				Vector3 pos = rabHat.transform.position;
-				Quaternion rotation = rabHat.transform.rotation;
-				spawnedRabbits.Add( Instantiate (rabbitPrefab, pos, rotation) );
+			if (rabHat.Remove(item)) {
+				//if (item == rabHat) {
+				Vector3 pos = item.transform.position;
+				Quaternion rotation = item.transform.rotation * Quaternion.AngleAxis(180, Vector3.up);
+				GameObject newRabbit = Instantiate (rabbitPrefab, pos, rotation);
+				//newRabbit.GetComponent<Animation> ().Play ("Take 001");
+				spawnedRabbits.Add( newRabbit );
 			}
-			item.transform.position += new Vector3(0f, 0.1f, 0f);
+			item.transform.position += new Vector3(0f, 0.2f, 0f);
 
 			if (spawnedRabbits.Remove (item) ) { //make sure to remove the hat from the array for consistancy
 				Destroy (item);
@@ -86,7 +106,7 @@ public class ARHitTest : MonoBehaviour {
 	public void Shuffle(){
 		StartCoroutine( ShuffleTime ( Random.Range(5, 10)) );
 
-		rabHat = spawnedObjects[Random.Range(0, spawnedObjects.Count)];
+		rabHat.Add(spawnedObjects[Random.Range(0, spawnedObjects.Count)]);
 
 	}
 		
